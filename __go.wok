@@ -1,0 +1,8 @@
+go 1.19
+
+use (
+	./context
+	./di
+	./mocking
+	./pointers-errors
+)
