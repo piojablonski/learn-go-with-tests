@@ -1,15 +1,19 @@
-package store
+package filesystem
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"players/application"
 	"players/business"
+	"players/store"
 )
 
 type FilesystemStore struct {
 	Database io.ReadWriteSeeker
+}
+
+func NewStore(db io.ReadWriteSeeker) store.PlayerStore {
+	return &FilesystemStore{db}
 }
 
 func (s *FilesystemStore) GetAllPlayers() business.League {
@@ -18,12 +22,12 @@ func (s *FilesystemStore) GetAllPlayers() business.League {
 	return players
 }
 
-func (s *FilesystemStore) GetScoreByPlayer(name string) (int, error) {
+func (s *FilesystemStore) GetScoreByPlayer(name string) (int, bool) {
 	player := s.GetAllPlayers().Find(name)
 	if player != nil {
-		return player.Score, nil
+		return player.Score, true
 	} else {
-		return 0, errors.New("player not found")
+		return 0, false
 	}
 }
 

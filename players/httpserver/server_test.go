@@ -33,7 +33,7 @@ func (s *stubPlayerStore) RecordWin(name string) {
 	s.operations = append(s.operations, "record")
 }
 
-func (s *stubPlayerStore) GetAllPlayers() []Player {
+func (s *stubPlayerStore) GetAllPlayers() League {
 	return s.league
 }
 

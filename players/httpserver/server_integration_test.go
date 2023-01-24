@@ -3,14 +3,17 @@ package httpserver_test
 import (
 	"net/http/httptest"
 	"players/business"
+	"players/common/testhelpers"
 	"players/httpserver"
-	"players/store/inmemory"
+	"players/store/filesystem"
 	"testing"
 )
 
 func TestIntegrationRoundtrip(t *testing.T) {
 	t.Run("get score", func(t *testing.T) {
-		var store = inmemory.NewInmemoryPlayerStore()
+		db, clean := testhelpers.CreateTempFile(t, "")
+		defer clean()
+		var store = filesystem.NewStore(db)
 		srv := httpserver.NewPlayerServer(store)
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
@@ -28,7 +31,9 @@ func TestIntegrationRoundtrip(t *testing.T) {
 	})
 
 	t.Run("get League", func(t *testing.T) {
-		var store = inmemory.NewInmemoryPlayerStore()
+		db, clean := testhelpers.CreateTempFile(t, "")
+		defer clean()
+		var store = filesystem.NewStore(db)
 		srv := httpserver.NewPlayerServer(store)
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))

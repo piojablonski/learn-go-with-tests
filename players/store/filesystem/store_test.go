@@ -1,8 +1,6 @@
-package store_test
+package filesystem_test
 
 import (
-	"io"
-	"os"
 	. "players/business"
 	. "players/common/testhelpers"
 	. "players/store/filesystem"
@@ -21,7 +19,7 @@ func TestFilesystemStore(t *testing.T) {
 
 		// GetAllPlayers
 
-		database, cleanDatabase := createTempFile(t, initialData)
+		database, cleanDatabase := CreateTempFile(t, initialData)
 		defer cleanDatabase()
 		var want = League{
 			{Name: "Swiatek", Score: 300},
@@ -41,7 +39,7 @@ func TestFilesystemStore(t *testing.T) {
 
 	})
 	t.Run("get player score", func(t *testing.T) {
-		database, cleanDatabase := createTempFile(t, initialData)
+		database, cleanDatabase := CreateTempFile(t, initialData)
 		defer cleanDatabase()
 		want := 300
 		store := FilesystemStore{database}
@@ -49,7 +47,7 @@ func TestFilesystemStore(t *testing.T) {
 		AssertEqual(t, got, want)
 	})
 	t.Run("record win for existing player", func(t *testing.T) {
-		database, cleanDatabase := createTempFile(t, initialData)
+		database, cleanDatabase := CreateTempFile(t, initialData)
 		defer cleanDatabase()
 		store := FilesystemStore{database}
 		store.RecordWin("Swiatek")
@@ -58,7 +56,7 @@ func TestFilesystemStore(t *testing.T) {
 		AssertEqual(t, got, want)
 	})
 	t.Run("record win for a new player", func(t *testing.T) {
-		database, cleanDatabase := createTempFile(t, initialData)
+		database, cleanDatabase := CreateTempFile(t, initialData)
 		defer cleanDatabase()
 		store := FilesystemStore{database}
 		store.RecordWin("Hurkacz")
@@ -66,23 +64,4 @@ func TestFilesystemStore(t *testing.T) {
 		want := 1
 		AssertEqual(t, got, want)
 	})
-}
-
-func createTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
-	t.Helper()
-	f, err := os.CreateTemp("", "db1")
-	if err != nil {
-		t.Fatalf("problem creating temporary file %q", err)
-	}
-
-	f.WriteString(initialData)
-
-	removeFile := func() {
-		err = os.Remove(f.Name())
-		if err != nil {
-			t.Fatalf("problem removing temporary file %q", err)
-		}
-	}
-
-	return f, removeFile
 }
