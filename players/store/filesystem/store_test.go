@@ -48,13 +48,22 @@ func TestFilesystemStore(t *testing.T) {
 		got, _ := store.GetScoreByPlayer("Swiatek")
 		AssertEqual(t, got, want)
 	})
-	t.Run("record win", func(t *testing.T) {
+	t.Run("record win for existing player", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initialData)
 		defer cleanDatabase()
 		store := FilesystemStore{database}
 		store.RecordWin("Swiatek")
 		got, _ := store.GetScoreByPlayer("Swiatek")
 		want := 301
+		AssertEqual(t, got, want)
+	})
+	t.Run("record win for a new player", func(t *testing.T) {
+		database, cleanDatabase := createTempFile(t, initialData)
+		defer cleanDatabase()
+		store := FilesystemStore{database}
+		store.RecordWin("Hurkacz")
+		got, _ := store.GetScoreByPlayer("Hurkacz")
+		want := 1
 		AssertEqual(t, got, want)
 	})
 }
