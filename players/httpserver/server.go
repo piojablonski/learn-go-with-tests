@@ -28,18 +28,17 @@ func NewPlayerServer(store store.PlayerStore) *PlayerServer {
 
 }
 
+const ApplicationJsonContentType = "application/json"
+
 func (ps *PlayerServer) leagueHandler(w http.ResponseWriter, req *http.Request) {
 
-	json.NewEncoder(w).Encode(ps.getLeagueTable())
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("content-type", ApplicationJsonContentType)
+	json.NewEncoder(w).Encode(ps.getLeagueTable())
 }
 
 func (ps *PlayerServer) getLeagueTable() []business.Player {
-	players := []business.Player{
-		{Name: "Swiatek", Score: 300},
-		{Name: "Hurkacz", Score: 234},
-		{Name: "Kubot", Score: 0},
-	}
+	players := ps.store.GetAllPlayers()
 	return players
 
 }
