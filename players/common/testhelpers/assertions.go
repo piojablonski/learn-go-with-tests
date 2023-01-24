@@ -18,3 +18,10 @@ func AssertEqual(t *testing.T, got, want any) {
 		t.Fatalf("got: %v, want: %v", got, want)
 	}
 }
+
+func AssertNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("didn't expect an error but got one, %v", err)
+	}
+}

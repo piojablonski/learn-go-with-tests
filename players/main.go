@@ -13,7 +13,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot open file %q", err)
 	}
-	store := filesystem.NewStore(f)
+	store, err := filesystem.NewStore(f)
+	if err != nil {
+		log.Fatalf("cannot create store %v", err)
+	}
 	err = http.ListenAndServe(":8080", httpserver.NewPlayerServer(store))
 	if err != nil {
 		log.Fatal(err)

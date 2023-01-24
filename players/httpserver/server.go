@@ -31,7 +31,6 @@ func NewPlayerServer(store store.PlayerStore) *PlayerServer {
 const ApplicationJsonContentType = "application/json"
 
 func (ps *PlayerServer) leagueHandler(w http.ResponseWriter, req *http.Request) {
-
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("content-type", ApplicationJsonContentType)
 	json.NewEncoder(w).Encode(ps.getLeagueTable())
@@ -59,7 +58,10 @@ func (ps *PlayerServer) saveScores(res http.ResponseWriter, req *http.Request) {
 
 	name := getPlayerName(req)
 
-	ps.store.RecordWin(name)
+	err := ps.store.RecordWin(name)
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func getPlayerName(req *http.Request) string {

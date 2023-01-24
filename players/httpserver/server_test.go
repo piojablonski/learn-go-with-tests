@@ -29,8 +29,9 @@ func (s *stubPlayerStore) GetScoreByPlayer(name string) (score int, found bool) 
 	return
 }
 
-func (s *stubPlayerStore) RecordWin(name string) {
+func (s *stubPlayerStore) RecordWin(name string) error {
 	s.operations = append(s.operations, "record")
+	return nil
 }
 
 func (s *stubPlayerStore) GetAllPlayers() League {

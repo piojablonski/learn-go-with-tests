@@ -4,6 +4,6 @@ import "players/business"
 
 type PlayerStore interface {
 	GetScoreByPlayer(name string) (score int, found bool)
-	RecordWin(name string)
+	RecordWin(name string) error
 	GetAllPlayers() business.League
 }

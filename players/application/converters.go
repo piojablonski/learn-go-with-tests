@@ -14,7 +14,7 @@ func ReadPlayers(r io.Reader) ([]business.Player, error) {
 	err := json.NewDecoder(r).Decode(&players)
 
 	if err != nil {
-		err = fmt.Errorf("problem parsing players: %q", err)
+		err = fmt.Errorf("parsing players failed, %w", err)
 	}
 
 	return players, err
