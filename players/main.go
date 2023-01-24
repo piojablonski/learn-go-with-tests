@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	f, err := os.Create("db")
+	f, err := os.OpenFile("db", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatalf("cannot open file %q", err)
 	}
