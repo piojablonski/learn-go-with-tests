@@ -3,27 +3,32 @@ package filesystem
 import (
 	"encoding/json"
 	"io"
+	"os"
 	"players/application"
 	"players/business"
 	"players/store"
 )
 
 type FilesystemStore struct {
-	Database io.ReadWriteSeeker
+	Database io.Writer
+	league   business.League
 }
 
-func NewStore(db io.ReadWriteSeeker) store.PlayerStore {
-	return &FilesystemStore{db}
+func NewStore(db *os.File) store.PlayerStore {
+	s := new(FilesystemStore)
+	s.Database = &store.Tape{File: db}
+	db.Seek(0, io.SeekStart)
+	players, _ := application.ReadPlayers(db)
+	s.league = players
+	return s
 }
 
 func (s *FilesystemStore) GetAllPlayers() business.League {
-	s.Database.Seek(0, io.SeekStart)
-	players, _ := application.ReadPlayers(s.Database)
-	return players
+	return s.league
 }
 
 func (s *FilesystemStore) GetScoreByPlayer(name string) (int, bool) {
-	player := s.GetAllPlayers().Find(name)
+	player := s.league.Find(name)
 	if player != nil {
 		return player.Score, true
 	} else {
@@ -32,15 +37,13 @@ func (s *FilesystemStore) GetScoreByPlayer(name string) (int, bool) {
 }
 
 func (s *FilesystemStore) RecordWin(name string) {
-	players := s.GetAllPlayers()
-	player := players.Find(name)
+	player := s.league.Find(name)
 
 	if player != nil {
 		player.Score++
 	} else {
-		players = append(players, business.Player{Name: name, Score: 1})
+		s.league = append(s.league, business.Player{Name: name, Score: 1})
 	}
-	s.Database.Seek(0, io.SeekStart)
-	json.NewEncoder(s.Database).Encode(players)
+	json.NewEncoder(s.Database).Encode(s.league)
 
 }

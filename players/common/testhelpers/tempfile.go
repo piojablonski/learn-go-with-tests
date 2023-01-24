@@ -1,12 +1,11 @@
 package testhelpers
 
 import (
-	"io"
 	"os"
 	"testing"
 )
 
-func CreateTempFile(t testing.TB, initialData string) (io.ReadWriteSeeker, func()) {
+func CreateTempFile(t testing.TB, initialData string) (*os.File, func()) {
 	t.Helper()
 	f, err := os.CreateTemp("", "db1")
 	if err != nil {
