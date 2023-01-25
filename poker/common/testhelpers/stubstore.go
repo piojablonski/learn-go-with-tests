@@ -14,7 +14,7 @@ func (s *StubPlayerStore) GetScoreByPlayer(name string) (score int, found bool) 
 }
 
 func (s *StubPlayerStore) RecordWin(name string) error {
-	s.WinCalls = append(s.WinCalls, "win")
+	s.WinCalls = append(s.WinCalls, name)
 	return nil
 }
 
