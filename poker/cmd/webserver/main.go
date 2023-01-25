@@ -5,18 +5,15 @@ import (
 	"github.com/piojablonski/learn-go-with-tests/poker/store/filesystem"
 	"log"
 	"net/http"
-	"os"
 )
 
 func main() {
-	f, err := os.OpenFile("db", os.O_RDWR|os.O_CREATE, 0666)
+	const dbFileName = "../db.json"
+	store, close, err := filesystem.NewStoreFromFile(dbFileName)
 	if err != nil {
-		log.Fatalf("cannot open file %q", err)
+		log.Fatal(err)
 	}
-	store, err := filesystem.NewStore(f)
-	if err != nil {
-		log.Fatalf("cannot create store %v", err)
-	}
+	defer close()
 	err = http.ListenAndServe(":8080", httpserver.NewPlayerServer(store))
 	if err != nil {
 		log.Fatal(err)

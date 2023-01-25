@@ -42,6 +42,21 @@ func NewStore(file *os.File) (store.PlayerStore, error) {
 	return s, nil
 }
 
+func NewStoreFromFile(name string) (store.PlayerStore, func(), error) {
+	f, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot open file while creating store, %w", err)
+	}
+	store, err := NewStore(f)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create store %w", err)
+	}
+	close := func() {
+		f.Close()
+	}
+	return store, close, nil
+}
+
 func (s *FilesystemStore) GetAllPlayers() business.League {
 	sort.Slice(s.league, func(i, j int) bool {
 		if s.league[i].Score > s.league[j].Score {
