@@ -8,6 +8,7 @@ import (
 	"players/application"
 	"players/business"
 	"players/store"
+	"sort"
 )
 
 type FilesystemStore struct {
@@ -42,6 +43,12 @@ func NewStore(file *os.File) (store.PlayerStore, error) {
 }
 
 func (s *FilesystemStore) GetAllPlayers() business.League {
+	sort.Slice(s.league, func(i, j int) bool {
+		if s.league[i].Score > s.league[j].Score {
+			return true
+		}
+		return false
+	})
 	return s.league
 }
 

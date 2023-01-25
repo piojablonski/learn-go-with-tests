@@ -11,10 +11,10 @@ func TestFilesystemStore(t *testing.T) {
 
 	initialData := `[
 {"Name": "Swiatek", "Score": 300},
-{"Name": "Kubot", "Score": 0}
+{"Name": "Kubot", "Score": 0},
+{"Name": "Afdan", "Score": 1200}
 ]`
-
-	t.Run("get league", func(t *testing.T) {
+	t.Run("get league sorted", func(t *testing.T) {
 		// src that can be read by io.Reader
 
 		// GetAllPlayers
@@ -22,6 +22,7 @@ func TestFilesystemStore(t *testing.T) {
 		database, cleanDatabase := CreateTempFile(t, initialData)
 		defer cleanDatabase()
 		var want = League{
+			{Name: "Afdan", Score: 1200},
 			{Name: "Swiatek", Score: 300},
 			{Name: "Kubot", Score: 0},
 		}
