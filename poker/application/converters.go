@@ -3,8 +3,8 @@ package application
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"io"
-	"players/business"
 )
 
 func ReadPlayers(r io.Reader) ([]business.Player, error) {

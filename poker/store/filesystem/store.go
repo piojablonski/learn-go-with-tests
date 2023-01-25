@@ -3,11 +3,11 @@ package filesystem
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/piojablonski/learn-go-with-tests/poker/application"
+	"github.com/piojablonski/learn-go-with-tests/poker/business"
+	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"io"
 	"os"
-	"players/application"
-	"players/business"
-	"players/store"
 	"sort"
 )
 

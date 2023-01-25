@@ -1,9 +1,9 @@
 package store_test
 
 import (
+	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
+	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"io"
-	"players/common/testhelpers"
-	"players/store"
 	"testing"
 )
 

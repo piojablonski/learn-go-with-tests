@@ -2,12 +2,12 @@ package httpserver_test
 
 import (
 	"fmt"
+	"github.com/piojablonski/learn-go-with-tests/poker/application"
+	"github.com/piojablonski/learn-go-with-tests/poker/business"
+	"github.com/piojablonski/learn-go-with-tests/poker/httpserver"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"players/application"
-	. "players/business"
-	"players/httpserver"
 	"reflect"
 	"testing"
 )
@@ -21,7 +21,7 @@ var scores = map[string]int{
 type stubPlayerStore struct {
 	scores     map[string]int
 	operations []string
-	league     []Player
+	league     []business.Player
 }
 
 func (s *stubPlayerStore) GetScoreByPlayer(name string) (score int, found bool) {
@@ -34,7 +34,7 @@ func (s *stubPlayerStore) RecordWin(name string) error {
 	return nil
 }
 
-func (s *stubPlayerStore) GetAllPlayers() League {
+func (s *stubPlayerStore) GetAllPlayers() business.League {
 	return s.league
 }
 
@@ -82,7 +82,7 @@ func TestServer(t *testing.T) {
 }
 
 func TestLeague(t *testing.T) {
-	wantedPlayers := []Player{
+	wantedPlayers := []business.Player{
 		{Name: "Swiatek", Score: 300},
 		{Name: "Hurkacz", Score: 234},
 		{Name: "Kubot", Score: 0},
@@ -124,7 +124,7 @@ func newLeagueRequest() *http.Request {
 	return req
 }
 
-func getLeagueFromResponse(t *testing.T, body io.Reader) []Player {
+func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
 	t.Helper()
 	got, err := application.ReadPlayers(body)
 	if err != nil {

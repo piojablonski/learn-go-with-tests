@@ -3,9 +3,9 @@ package httpserver
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/piojablonski/learn-go-with-tests/poker/business"
+	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"net/http"
-	"players/business"
-	"players/store"
 	"strings"
 )
 

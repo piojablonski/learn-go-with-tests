@@ -1,9 +1,9 @@
 package filesystem_test
 
 import (
-	. "players/business"
-	. "players/common/testhelpers"
-	. "players/store/filesystem"
+	. "github.com/piojablonski/learn-go-with-tests/poker/business"
+	. "github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
+	. "github.com/piojablonski/learn-go-with-tests/poker/store/filesystem"
 	"testing"
 )
 

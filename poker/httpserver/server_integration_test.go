@@ -1,20 +1,20 @@
 package httpserver_test
 
 import (
+	"github.com/piojablonski/learn-go-with-tests/poker/business"
+	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
+	"github.com/piojablonski/learn-go-with-tests/poker/httpserver"
+	"github.com/piojablonski/learn-go-with-tests/poker/store/filesystem"
 	"net/http/httptest"
-	"players/business"
-	. "players/common/testhelpers"
-	"players/httpserver"
-	"players/store/filesystem"
 	"testing"
 )
 
 func TestIntegrationRoundtrip(t *testing.T) {
 	t.Run("get score", func(t *testing.T) {
-		db, clean := CreateTempFile(t, "[]")
+		db, clean := testhelpers.CreateTempFile(t, "[]")
 		defer clean()
 		store, err := filesystem.NewStore(db)
-		AssertNoError(t, err)
+		testhelpers.AssertNoError(t, err)
 		srv := httpserver.NewPlayerServer(store)
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
@@ -32,10 +32,10 @@ func TestIntegrationRoundtrip(t *testing.T) {
 	})
 
 	t.Run("get League", func(t *testing.T) {
-		db, clean := CreateTempFile(t, "[]")
+		db, clean := testhelpers.CreateTempFile(t, "[]")
 		defer clean()
 		var store, err = filesystem.NewStore(db)
-		AssertNoError(t, err)
+		testhelpers.AssertNoError(t, err)
 		srv := httpserver.NewPlayerServer(store)
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
@@ -54,10 +54,10 @@ func TestIntegrationRoundtrip(t *testing.T) {
 	})
 
 	t.Run("works with an empty file", func(t *testing.T) {
-		db, clean := CreateTempFile(t, "")
+		db, clean := testhelpers.CreateTempFile(t, "")
 		defer clean()
 		var _, err = filesystem.NewStore(db)
-		AssertNoError(t, err)
+		testhelpers.AssertNoError(t, err)
 	})
 
 }
