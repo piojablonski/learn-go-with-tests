@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
+	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
 	"github.com/piojablonski/learn-go-with-tests/poker/httpserver"
 	"io"
 	"net/http"
@@ -18,28 +19,8 @@ var scores = map[string]int{
 	"Kubot":   0,
 }
 
-type stubPlayerStore struct {
-	scores     map[string]int
-	operations []string
-	league     []business.Player
-}
-
-func (s *stubPlayerStore) GetScoreByPlayer(name string) (score int, found bool) {
-	score, found = s.scores[name]
-	return
-}
-
-func (s *stubPlayerStore) RecordWin(name string) error {
-	s.operations = append(s.operations, "record")
-	return nil
-}
-
-func (s *stubPlayerStore) GetAllPlayers() business.League {
-	return s.league
-}
-
 func TestServer(t *testing.T) {
-	store := &stubPlayerStore{scores: scores}
+	store := &testhelpers.StubPlayerStore{Scores: scores}
 	srv := httpserver.NewPlayerServer(store)
 	t.Run("return Swiatek scores", func(t *testing.T) {
 		req := getPlayerScores("Swiatek")
@@ -87,7 +68,7 @@ func TestLeague(t *testing.T) {
 		{Name: "Hurkacz", Score: 234},
 		{Name: "Kubot", Score: 0},
 	}
-	store := &stubPlayerStore{nil, nil, wantedPlayers}
+	store := &testhelpers.StubPlayerStore{nil, nil, wantedPlayers}
 	srv := httpserver.NewPlayerServer(store)
 
 	t.Run("it return 200 on /league", func(t *testing.T) {
@@ -134,7 +115,7 @@ func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
 }
 
 func TestStoreWins(t *testing.T) {
-	store := &stubPlayerStore{scores: scores}
+	store := &testhelpers.StubPlayerStore{Scores: scores}
 	srv := httpserver.NewPlayerServer(store)
 
 	req := postPlayerScores("Radwańska")
@@ -143,7 +124,7 @@ func TestStoreWins(t *testing.T) {
 
 	assertStatusOk(t, res.Code)
 
-	if store.operations[0] != "record" {
+	if len(store.WinCalls) != 1 {
 		t.Fatalf("expected record operation")
 	}
 }
