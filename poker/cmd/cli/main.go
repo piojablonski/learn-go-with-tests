@@ -11,21 +11,24 @@ import (
 
 const dbFileName = "../db.json"
 
-type DefaultBlindAlerter struct{}
-
-func (d DefaultBlindAlerter) ScheduleAlertAt(_ time.Duration, _ int) {
-	log.Println("implement me")
+func StdOutBlindAlerter(at time.Duration, amount int) {
+	time.AfterFunc(at, func() {
+		_, err := fmt.Fprintf(os.Stdout, "current blind is: %d", amount)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
 }
 
 func main() {
-	fmt.Println("poker command line utility")
+	fmt.Println("You are playing poker!")
 
 	store, closeStore, err := filesystem.NewStoreFromFile(dbFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer closeStore()
-	cli := application.NewCLI(store, os.Stdin, &DefaultBlindAlerter{})
+	cli := application.NewCLI(store, os.Stdin, application.BlindAlerterFunc(StdOutBlindAlerter))
 	for {
 		err := cli.PlayPoker()
 		if err != nil {

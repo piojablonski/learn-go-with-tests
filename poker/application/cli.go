@@ -41,11 +41,12 @@ type CLI struct {
 
 func (cli *CLI) PlayPoker() error {
 	var name string
+
+	cli.scheduleAllAlerts()
 	_, err := fmt.Fscan(cli.in, &name)
 	if err != nil {
 		return fmt.Errorf("playing poker, problem while scanning name, %w", err)
 	}
-	cli.scheduleAllAlerts()
 	err = cli.store.RecordWin(name)
 	if err != nil {
 		return fmt.Errorf("playing poker, problem recording name, %w", err)
@@ -61,4 +62,10 @@ func (cli *CLI) scheduleAllAlerts() {
 
 type BlindAlerter interface {
 	ScheduleAlertAt(at time.Duration, amount int)
+}
+
+type BlindAlerterFunc func(at time.Duration, amount int)
+
+func (b BlindAlerterFunc) ScheduleAlertAt(at time.Duration, amount int) {
+	b(at, amount)
 }
