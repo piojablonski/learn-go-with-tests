@@ -29,18 +29,23 @@ func (s *ScheduleAlert) String() string {
 	return fmt.Sprintf("%d chips at %s", s.Amount, s.ScheduledAt)
 }
 
-func NewCLI(store store.PlayerStore, in io.Reader, alerter BlindAlerter) *CLI {
-	return &CLI{store, in, alerter}
+func NewCLI(store store.PlayerStore, in io.Reader, out io.Writer, alerter BlindAlerter) *CLI {
+	return &CLI{store, in, alerter, out}
 }
 
 type CLI struct {
 	store   store.PlayerStore
 	in      io.Reader
 	alerter BlindAlerter
+	out     io.Writer
 }
+
+const PlayersPrompt = "Podaj ilość graczy: "
 
 func (cli *CLI) PlayPoker() error {
 	var name string
+
+	fmt.Fprint(cli.out, PlayersPrompt)
 
 	cli.scheduleAllAlerts()
 	_, err := fmt.Fscan(cli.in, &name)

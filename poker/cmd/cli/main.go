@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer closeStore()
-	cli := application.NewCLI(store, os.Stdin, application.BlindAlerterFunc(StdOutBlindAlerter))
+	cli := application.NewCLI(store, os.Stdin, os.Stdout, application.BlindAlerterFunc(StdOutBlindAlerter))
 	for {
 		err := cli.PlayPoker()
 		if err != nil {

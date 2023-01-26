@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
@@ -12,21 +13,40 @@ import (
 
 var scores = map[string]int{}
 
+var dummyStore = new(testhelpers.StubPlayerStore)
+var dummyAlerter = new(SpyBlindAlerter)
+var dummyIn = new(bytes.Buffer)
+var dummyOut = new(bytes.Buffer)
+
 func TestSaveScores(t *testing.T) {
-	store := &testhelpers.StubPlayerStore{Scores: scores}
-	dummyBlindAlerter := &SpyBlindAlerter{}
+	t.Run("registers Swiatek won", func(t *testing.T) {
 
-	in := strings.NewReader("Swiatek wins\n")
+		store := &testhelpers.StubPlayerStore{Scores: scores}
 
-	cli := application.NewCLI(store, in, dummyBlindAlerter)
-	err := cli.PlayPoker()
-	testhelpers.AssertNoError(t, err)
+		in := strings.NewReader("Swiatek wins\n")
 
-	testhelpers.AssertEqual(t, len(store.WinCalls), 1)
+		cli := application.NewCLI(store, in, dummyOut, dummyAlerter)
+		err := cli.PlayPoker()
+		testhelpers.AssertNoError(t, err)
 
-	want := "Swiatek"
-	got := store.WinCalls[0]
-	testhelpers.AssertEqual(t, got, want)
+		testhelpers.AssertEqual(t, len(store.WinCalls), 1)
+
+		want := "Swiatek"
+		got := store.WinCalls[0]
+		testhelpers.AssertEqual(t, got, want)
+	})
+	t.Run("asks for number of players", func(t *testing.T) {
+
+		out := new(bytes.Buffer)
+		in := strings.NewReader("Swiatek wins\n")
+		cli := application.NewCLI(dummyStore, in, out, dummyAlerter)
+		err := cli.PlayPoker()
+		testhelpers.AssertNoError(t, err)
+
+		gotInConsole := out.String()
+		wantInConsole := application.PlayersPrompt
+		testhelpers.AssertEqual(t, gotInConsole, wantInConsole)
+	})
 }
 
 type SpyBlindAlerter struct {
@@ -43,7 +63,7 @@ func TestBlindAlerts(t *testing.T) {
 	in := strings.NewReader("Swiatek wins\n")
 
 	blindAlerter := &SpyBlindAlerter{}
-	cli := application.NewCLI(store, in, blindAlerter)
+	cli := application.NewCLI(store, in, dummyOut, blindAlerter)
 	err := cli.PlayPoker()
 	testhelpers.AssertNoError(t, err)
 
