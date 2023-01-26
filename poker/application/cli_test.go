@@ -35,17 +35,30 @@ func TestSaveScores(t *testing.T) {
 		got := store.WinCalls[0]
 		testhelpers.AssertEqual(t, got, want)
 	})
-	t.Run("asks for number of players", func(t *testing.T) {
+	t.Run("asks for number of players and schedules proper amount of alerts", func(t *testing.T) {
 
 		out := new(bytes.Buffer)
-		in := strings.NewReader("Swiatek wins\n")
-		cli := application.NewCLI(dummyStore, in, out, dummyAlerter)
+		in := bytes.NewBufferString("2\n")
+		//in := strings.NewReader("2\n")
+		fmt.Fprintln(in, "Swiatek wins")
+		alerter := &SpyBlindAlerter{}
+		cli := application.NewCLI(dummyStore, in, out, alerter)
 		err := cli.PlayPoker()
 		testhelpers.AssertNoError(t, err)
 
 		gotInConsole := out.String()
 		wantInConsole := application.PlayersPrompt
 		testhelpers.AssertEqual(t, gotInConsole, wantInConsole)
+
+		want := []application.ScheduleAlert{
+			{0, 100},
+			{7 * time.Minute, 200},
+			{14 * time.Minute, 300},
+		}
+
+		got := alerter.alerts[:3]
+		testhelpers.AssertEqual(t, got, want)
+
 	})
 }
 
@@ -60,7 +73,8 @@ func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int) {
 func TestBlindAlerts(t *testing.T) {
 	store := &testhelpers.StubPlayerStore{Scores: scores}
 
-	in := strings.NewReader("Swiatek wins\n")
+	in := bytes.NewBufferString("5\n")
+	fmt.Fprint(in, "Swiatek wins\n")
 
 	blindAlerter := &SpyBlindAlerter{}
 	cli := application.NewCLI(store, in, dummyOut, blindAlerter)

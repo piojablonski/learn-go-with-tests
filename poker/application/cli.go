@@ -25,6 +25,17 @@ var Schedule = []ScheduleAlert{{0 * time.Second, 100},
 	{100 * time.Minute, 8000},
 }
 
+var Amounts = []int{100, 200,
+	300,
+	400,
+	500,
+	600,
+	800,
+	1000,
+	2000,
+	4000,
+	8000}
+
 func (s *ScheduleAlert) String() string {
 	return fmt.Sprintf("%d chips at %s", s.Amount, s.ScheduledAt)
 }
@@ -43,25 +54,36 @@ type CLI struct {
 const PlayersPrompt = "Podaj ilość graczy: "
 
 func (cli *CLI) PlayPoker() error {
-	var name string
+	var (
+		name        string
+		noOfPlayers int
+	)
 
 	fmt.Fprint(cli.out, PlayersPrompt)
+	fmt.Fscanln(cli.in, &noOfPlayers)
+	//if err != nil {
+	//	return fmt.Errorf("playing poker, problem while scanning number of players, %w", err)
+	//}
 
-	cli.scheduleAllAlerts()
-	_, err := fmt.Fscan(cli.in, &name)
-	if err != nil {
-		return fmt.Errorf("playing poker, problem while scanning name, %w", err)
-	}
-	err = cli.store.RecordWin(name)
+	cli.scheduleAllAlerts(noOfPlayers)
+	fmt.Fscanln(cli.in, &name)
+	//if err != nil {
+	//	return fmt.Errorf("playing poker, problem while scanning name, %w", err)
+	//}
+	err := cli.store.RecordWin(name)
 	if err != nil {
 		return fmt.Errorf("playing poker, problem recording name, %w", err)
 	}
 	return nil
 }
 
-func (cli *CLI) scheduleAllAlerts() {
-	for _, s := range Schedule {
-		cli.alerter.ScheduleAlertAt(s.ScheduledAt, s.Amount)
+func (cli *CLI) scheduleAllAlerts(noOfPlayers int) {
+	timeIncrement := time.Duration(5+noOfPlayers) * time.Minute
+	blindTime := 0 * time.Second
+	for _, amount := range Amounts {
+		//ti := timeIncrement*i + 10*time.Secon
+		cli.alerter.ScheduleAlertAt(blindTime, amount)
+		blindTime = blindTime + timeIncrement
 	}
 }
 
