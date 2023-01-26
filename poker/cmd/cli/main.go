@@ -24,11 +24,12 @@ func main() {
 	fmt.Println("You are playing poker!")
 
 	store, closeStore, err := filesystem.NewStoreFromFile(dbFileName)
+	game := application.NewGame(store, application.BlindAlerterFunc(StdOutBlindAlerter))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer closeStore()
-	cli := application.NewCLI(store, os.Stdin, os.Stdout, application.BlindAlerterFunc(StdOutBlindAlerter))
+	cli := application.NewCLI(os.Stdin, os.Stdout, game)
 	for {
 		err := cli.PlayPoker()
 		if err != nil {

@@ -20,7 +20,7 @@ var scores = map[string]int{
 }
 
 func TestServer(t *testing.T) {
-	store := &testhelpers.StubPlayerStore{Scores: scores}
+	store := &testhelpers.SpyPlayerStore{Scores: scores}
 	srv := httpserver.NewPlayerServer(store)
 	t.Run("return Swiatek scores", func(t *testing.T) {
 		req := getPlayerScores("Swiatek")
@@ -68,7 +68,7 @@ func TestLeague(t *testing.T) {
 		{Name: "Hurkacz", Score: 234},
 		{Name: "Kubot", Score: 0},
 	}
-	store := &testhelpers.StubPlayerStore{nil, nil, wantedPlayers}
+	store := &testhelpers.SpyPlayerStore{nil, nil, wantedPlayers}
 	srv := httpserver.NewPlayerServer(store)
 
 	t.Run("it return 200 on /league", func(t *testing.T) {
@@ -115,7 +115,7 @@ func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
 }
 
 func TestStoreWins(t *testing.T) {
-	store := &testhelpers.StubPlayerStore{Scores: scores}
+	store := &testhelpers.SpyPlayerStore{Scores: scores}
 	srv := httpserver.NewPlayerServer(store)
 
 	req := postPlayerScores("Radwańska")
