@@ -4,11 +4,12 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
+	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -17,9 +18,10 @@ type PlayerServer struct {
 	// it includes serve http to the struct on the root level
 	http.Handler
 	template *template.Template
+	game     application.Game
 }
 
-func NewPlayerServer(store store.PlayerStore) (*PlayerServer, error) {
+func NewPlayerServer(store store.PlayerStore, game application.Game) (*PlayerServer, error) {
 	srv := new(PlayerServer)
 	router := http.NewServeMux()
 	tmpl, err := template.ParseFS(postTemplates, "templates/*")
@@ -29,6 +31,7 @@ func NewPlayerServer(store store.PlayerStore) (*PlayerServer, error) {
 	srv.template = tmpl
 	// router and PlayerServer both implements Handle interface so I can assign the router to the server
 	srv.Handler = router
+	srv.game = game
 
 	router.HandleFunc("/league", srv.leagueHandler)
 	router.HandleFunc("/player/", srv.playerHandler)
@@ -41,16 +44,15 @@ func NewPlayerServer(store store.PlayerStore) (*PlayerServer, error) {
 
 const ApplicationJsonContentType = "application/json"
 
-var wsUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
 func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
 
-	conn, _ := wsUpgrader.Upgrade(w, r, nil)
-	_, winnerMsg, _ := conn.ReadMessage()
-	p.store.RecordWin(string(winnerMsg))
+	ws := newPlayerServerWS(w, r)
+
+	noOfPLayersMsg := ws.waitForMessage()
+	noOfPlayers, _ := strconv.Atoi(noOfPLayersMsg)
+	p.game.StartGame(noOfPlayers /*, io.Discard*/)
+	winnerMsg := ws.waitForMessage()
+	p.game.Finish(winnerMsg)
 }
 
 var (

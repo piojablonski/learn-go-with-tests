@@ -1,6 +1,7 @@
 package httpserver_test
 
 import (
+	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
 	"github.com/piojablonski/learn-go-with-tests/poker/store/filesystem"
@@ -14,7 +15,8 @@ func TestIntegrationRoundtrip(t *testing.T) {
 		defer clean()
 		store, err := filesystem.NewStore(db)
 		testhelpers.AssertNoError(t, err)
-		srv := mustMakePlayerServer(t, store)
+		game := new(application.SpyGame)
+		srv := mustMakePlayerServer(t, store, game)
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
@@ -35,7 +37,8 @@ func TestIntegrationRoundtrip(t *testing.T) {
 		defer clean()
 		var store, err = filesystem.NewStore(db)
 		testhelpers.AssertNoError(t, err)
-		srv := mustMakePlayerServer(t, store)
+		game := new(application.SpyGame)
+		srv := mustMakePlayerServer(t, store, game)
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 		srv.ServeHTTP(httptest.NewRecorder(), postPlayerScores("Swiatek"))
 

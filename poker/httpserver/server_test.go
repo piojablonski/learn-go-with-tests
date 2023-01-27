@@ -23,9 +23,9 @@ var scores = map[string]int{
 	"Kubot":   0,
 }
 
-func mustMakePlayerServer(t *testing.T, store store.PlayerStore) *httpserver.PlayerServer {
+func mustMakePlayerServer(t *testing.T, store store.PlayerStore, game application.Game) *httpserver.PlayerServer {
 	t.Helper()
-	srv, err := httpserver.NewPlayerServer(store)
+	srv, err := httpserver.NewPlayerServer(store, game)
 	if err != nil {
 		t.Fatalf("problem creating player server, %v", err)
 	}
@@ -60,7 +60,8 @@ func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
 
 func TestStoreWins(t *testing.T) {
 	store := &testhelpers.SpyPlayerStore{Scores: scores}
-	srv := mustMakePlayerServer(t, store)
+	game := new(application.SpyGame)
+	srv := mustMakePlayerServer(t, store, game)
 
 	req := postPlayerScores("Radwańska")
 	res := httptest.NewRecorder()
@@ -102,9 +103,17 @@ func mustDial(t *testing.T, url string) *websocket.Conn {
 
 }
 
+func writeWS(t *testing.T, wsconn *websocket.Conn, winner string) {
+	t.Helper()
+	if err := wsconn.WriteMessage(websocket.TextMessage, []byte(winner)); err != nil {
+		t.Fatalf("cannot send a message through websocket, %v", err)
+	}
+}
+
 func TestPlayer(t *testing.T) {
 	store := &testhelpers.SpyPlayerStore{Scores: scores}
-	srv := mustMakePlayerServer(t, store)
+	game := new(application.SpyGame)
+	srv := mustMakePlayerServer(t, store, game)
 	t.Run("return Swiatek scores", func(t *testing.T) {
 		req := getPlayerScores("Swiatek")
 		res := httptest.NewRecorder()
@@ -152,7 +161,8 @@ func TestLeague(t *testing.T) {
 		{Name: "Kubot", Score: 0},
 	}
 	store := &testhelpers.SpyPlayerStore{nil, nil, wantedPlayers}
-	srv := mustMakePlayerServer(t, store)
+	game := new(application.SpyGame)
+	srv := mustMakePlayerServer(t, store, game)
 
 	t.Run("it return 200 on /league", func(t *testing.T) {
 
@@ -177,7 +187,8 @@ func TestLeague(t *testing.T) {
 func TestGame(t *testing.T) {
 	t.Run("it returns 200 when hit /game", func(t *testing.T) {
 		store := &testhelpers.SpyPlayerStore{}
-		srv := mustMakePlayerServer(t, store)
+		game := new(application.SpyGame)
+		srv := mustMakePlayerServer(t, store, game)
 		req, _ := newGameRequest()
 		res := httptest.NewRecorder()
 
@@ -185,24 +196,21 @@ func TestGame(t *testing.T) {
 		assertStatusOk(t, res)
 	})
 
-	t.Run("server accepts signal RecordWin on /ws", func(t *testing.T) {
-		store := &testhelpers.SpyPlayerStore{}
-		srv := httptest.NewServer(mustMakePlayerServer(t, store))
-		defer srv.Close()
-
+	t.Run("start with 2 players and finish with Swiatek as a winner", func(t *testing.T) {
+		dummyStore := &testhelpers.SpyPlayerStore{}
+		game := new(application.SpyGame)
+		srv := httptest.NewServer(mustMakePlayerServer(t, dummyStore, game))
 		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws"
 		wsconn := mustDial(t, wsURL)
+
+		defer srv.Close()
 		defer wsconn.Close()
-		winner := "Swiatek"
-		if err := wsconn.WriteMessage(websocket.TextMessage, []byte(winner)); err != nil {
-			t.Fatalf("cannot send a message through websocket, %v", err)
-		}
+
+		writeWS(t, wsconn, "3")
+		writeWS(t, wsconn, "Swiatek")
+
 		time.Sleep(1 * time.Second)
-		if len(store.WinCalls) != 1 {
-			t.Fatalf("expected to have a winner but got none")
-		}
-		if got := store.WinCalls[0]; got != winner {
-			t.Fatalf("expected winner to be %s but got %s", winner, got)
-		}
+		application.AssertGameStartedWithPlayers(t, game, 3)
+		application.AssertFinishCalledWith(t, game, "Swiatek")
 	})
 }
