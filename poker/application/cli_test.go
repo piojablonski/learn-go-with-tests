@@ -40,28 +40,81 @@ func (s *SpyGame) Finish(winner string) error {
 }
 
 func TestSaveScores(t *testing.T) {
-	t.Run("registers Swiatek won", func(t *testing.T) {
-		in := strings.NewReader("Swiatek wins\n")
+	t.Run("start with 2 players and finish with Swiatek as a winner", func(t *testing.T) {
+		in := strings.NewReader("2\nSwiatek wins\n")
 		game := &SpyGame{}
 		cli := application.NewCLI(in, dummyOut, game)
 		err := cli.PlayPoker()
 		testhelpers.AssertNoError(t, err)
-		want := []string{"Swiatek"}
-		got := game.callsToFinishGame
-		testhelpers.AssertEqual(t, got, want)
+		AssertReceivedMessages(t, dummyOut, application.PlayersPrompt)
+		AssertFinishCalledWith(t, game, "Swiatek")
+		AssertGameStartedWithPlayers(t, game, 2)
 	})
-	t.Run("reads amount of players and starts a game", func(t *testing.T) {
-		out := new(bytes.Buffer)
-		in := bytes.NewBufferString("2\n")
-		game := new(SpyGame)
-		cli := application.NewCLI(in, out, game)
+	t.Run("start with 8 players and finish with Zimoch as a winner", func(t *testing.T) {
+		in := strings.NewReader("8\nZimoch wins\n")
+		game := &SpyGame{}
+		cli := application.NewCLI(in, dummyOut, game)
 		err := cli.PlayPoker()
 		testhelpers.AssertNoError(t, err)
+		AssertReceivedMessages(t, dummyOut, application.PlayersPrompt)
+		AssertFinishCalledWith(t, game, "Zimoch")
+		AssertGameStartedWithPlayers(t, game, 8)
+	})
 
-		got := game.callsToStartGame
-		want := []int{2}
-		testhelpers.AssertEqual(t, got, want)
+	t.Run("handles inproper format of number of players", func(t *testing.T) {
+		in := strings.NewReader("five\n")
+		out := new(bytes.Buffer)
+		game := new(SpyGame)
+		err := application.NewCLI(in, out, game).PlayPoker()
+		testhelpers.AssertNoError(t, err)
+
+		AssertGameNotStarted(t, game)
+		AssertReceivedMessages(t, out, application.PlayersPrompt, application.WrongNumberOfPlayers)
 
 	})
+
+	t.Run("displays an error when an incorrect text is typed to finish the game", func(t *testing.T) {
+		in := strings.NewReader("2\nSarah is a killer")
+		out := new(bytes.Buffer)
+		game := new(SpyGame)
+		err := application.NewCLI(in, out, game).PlayPoker()
+		testhelpers.AssertNoError(t, err)
+		AssertGameStartedWithPlayers(t, game, 2)
+		AssertReceivedMessages(t, out, application.PlayersPrompt, application.ErrFinishingGameWrongInput)
+		AssertGameNotFinished(t, game)
+	})
+}
+
+func AssertGameNotStarted(t *testing.T, game *SpyGame) {
+	if len(game.callsToStartGame) > 0 {
+		t.Errorf("game should not have started")
+	}
+}
+
+func AssertGameStartedWithPlayers(t *testing.T, game *SpyGame, noOfPlayers int) {
+	got2 := game.callsToStartGame
+	want2 := []int{noOfPlayers}
+	testhelpers.AssertEqual(t, got2, want2)
+}
+
+func AssertFinishCalledWith(t *testing.T, game *SpyGame, name string) {
+	want := []string{name}
+	got := game.callsToFinishGame
+	testhelpers.AssertEqual(t, got, want)
+}
+
+func AssertGameNotFinished(t *testing.T, game *SpyGame) {
+	if len(game.callsToFinishGame) > 0 {
+		t.Fatalf("Game shouldn't be finished")
+	}
+}
+
+func AssertReceivedMessages(t *testing.T, out *bytes.Buffer, messages ...string) {
+
+	want := strings.Join(messages, "\n")
+	got := out.String()
+	if !strings.Contains(got, want) {
+		t.Errorf("Expected to see %q", want)
+	}
 
 }

@@ -19,31 +19,49 @@ type CLI struct {
 	game Game
 }
 
-const PlayersPrompt = "Podaj ilość graczy: "
+const (
+	PlayersPrompt              = "Podaj ilość graczy: "
+	WrongNumberOfPlayers       = "Podałeś niepoprawną wartość, wpisz cyfrę."
+	ErrFinishingGameWrongInput = "Nie zrozumiałem tego co do mnie mówisz."
+)
 
 func (c *CLI) PlayPoker() error {
 	var (
-		winner      string
 		noOfPlayers int
 	)
 
-	fmt.Fprint(c.out, PlayersPrompt)
-	fmt.Fscanln(c.in, &noOfPlayers)
-	//if err != nil {
-	//	return fmt.Errorf("playing poker, problem while scanning number of players, %w", err)
-	//}
-
+	fmt.Fprintln(c.out, PlayersPrompt)
+	_, err := fmt.Fscanln(c.in, &noOfPlayers)
+	if err != nil {
+		if err.Error() == "expected integer" {
+			fmt.Fprintln(c.out, WrongNumberOfPlayers)
+			return nil
+		} else {
+			return fmt.Errorf("playing poker, problem while scanning number of players, %w",
+				err)
+		}
+	}
 	c.game.StartGame(noOfPlayers)
 
-	//cli.scheduleAllAlerts(noOfPlayers)
-	fmt.Fscanln(c.in, &winner)
-	err := c.game.Finish(winner)
+	//for {
+	var (
+		winner, command string
+	)
+	fmt.Fscanln(c.in, &winner, &command)
 
+	if len(winner) > 0 && command == "wins" {
+		err = c.game.Finish(winner)
+		if err != nil {
+			return fmt.Errorf("playing poker, problem recording name, %w", err)
+		}
+		//break
+	} else {
+		fmt.Fprintln(c.out, ErrFinishingGameWrongInput)
+	}
 	//if err != nil {
 	//	return fmt.Errorf("playing poker, problem while scanning name, %w", err)
 	//}
-	if err != nil {
-		return fmt.Errorf("playing poker, problem recording name, %w", err)
-	}
+	//}
+
 	return nil
 }
