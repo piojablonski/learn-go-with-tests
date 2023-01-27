@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/store/filesystem"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -11,9 +12,9 @@ import (
 
 const dbFileName = "../db.json"
 
-func StdOutBlindAlerter(at time.Duration, amount int) {
+func StdOutBlindAlerter(at time.Duration, amount int, w io.Writer) {
 	time.AfterFunc(at, func() {
-		_, err := fmt.Fprintf(os.Stdout, "current blind is: %d", amount)
+		_, err := fmt.Fprintf(w, "current blind is: %d", amount)
 		if err != nil {
 			log.Fatal(err)
 		}

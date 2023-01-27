@@ -3,6 +3,7 @@ package application
 import (
 	"bytes"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
+	"io"
 	"strings"
 	"testing"
 )
@@ -12,7 +13,7 @@ type SpyGame struct {
 	CallsToFinishGame []string
 }
 
-func (s *SpyGame) StartGame(noOfPlayers int) {
+func (s *SpyGame) StartGame(noOfPlayers int, _ io.Writer) {
 	s.CallsToStartGame = append(s.CallsToStartGame, noOfPlayers)
 }
 

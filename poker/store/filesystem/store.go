@@ -51,10 +51,10 @@ func NewStoreFromFile(name string) (store.PlayerStore, func(), error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create store %w", err)
 	}
-	close := func() {
+	closeStore := func() {
 		f.Close()
 	}
-	return store, close, nil
+	return store, closeStore, nil
 }
 
 func (s *FilesystemStore) GetAllPlayers() business.League {

@@ -3,6 +3,7 @@ package application
 import (
 	"fmt"
 	"io"
+	"os"
 )
 
 func (s *ScheduledAlert) String() string {
@@ -41,7 +42,7 @@ func (c *CLI) PlayPoker() error {
 				err)
 		}
 	}
-	c.game.StartGame(noOfPlayers)
+	c.game.StartGame(noOfPlayers, os.Stdout)
 
 	//for {
 	var (

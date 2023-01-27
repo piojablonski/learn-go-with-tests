@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
+	"io"
 	"testing"
 	"time"
 )
@@ -13,7 +14,7 @@ func TestGame(t *testing.T) {
 	t.Run("schedules proper alerts for 2 players", func(t *testing.T) {
 		alerter := &SpyBlindAlerter{}
 		game := application.NewGame(dummyStore, alerter)
-		game.StartGame(2)
+		game.StartGame(2, io.Discard)
 
 		want := []application.ScheduledAlert{
 			{0, 100},
@@ -29,7 +30,7 @@ func TestGame(t *testing.T) {
 		store := &testhelpers.SpyPlayerStore{Scores: scores}
 		blindAlerter := &SpyBlindAlerter{}
 		game := application.NewGame(store, blindAlerter)
-		game.StartGame(5)
+		game.StartGame(5, io.Discard)
 
 		cases := []application.ScheduledAlert{
 			{0 * time.Second, 100},
@@ -63,7 +64,7 @@ func TestGame(t *testing.T) {
 		store := &testhelpers.SpyPlayerStore{Scores: scores}
 		blindAlerter := &SpyBlindAlerter{}
 		game := application.NewGame(store, blindAlerter)
-		game.StartGame(5)
+		game.StartGame(5, io.Discard)
 		game.Finish("Piotr")
 
 		got := store.WinCalls[0]

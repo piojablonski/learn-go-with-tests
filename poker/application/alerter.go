@@ -1,6 +1,9 @@
 package application
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 type ScheduledAlert struct {
 	ScheduledAt time.Duration
@@ -8,11 +11,11 @@ type ScheduledAlert struct {
 }
 
 type BlindAlerter interface {
-	ScheduleAlertAt(at time.Duration, amount int)
+	ScheduleAlertAt(at time.Duration, amount int, w io.Writer)
 }
 
-type BlindAlerterFunc func(at time.Duration, amount int)
+type BlindAlerterFunc func(at time.Duration, amount int, w io.Writer)
 
-func (b BlindAlerterFunc) ScheduleAlertAt(at time.Duration, amount int) {
-	b(at, amount)
+func (b BlindAlerterFunc) ScheduleAlertAt(at time.Duration, amount int, w io.Writer) {
+	b(at, amount, w)
 }

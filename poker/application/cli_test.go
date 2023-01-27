@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
+	"io"
 
 	"strings"
 	"testing"
@@ -21,7 +22,7 @@ type SpyBlindAlerter struct {
 	alerts []application.ScheduledAlert
 }
 
-func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int) {
+func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int, _ io.Writer) {
 	s.alerts = append(s.alerts, application.ScheduledAlert{at, amount})
 }
 

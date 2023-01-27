@@ -3,11 +3,12 @@ package application
 import (
 	"fmt"
 	"github.com/piojablonski/learn-go-with-tests/poker/store"
+	"io"
 	"time"
 )
 
 type Game interface {
-	StartGame(noOfPlayers int)
+	StartGame(noOfPlayers int, w io.Writer)
 	Finish(winner string) error
 }
 
@@ -16,8 +17,8 @@ type DefaultGame struct {
 	alerter BlindAlerter
 }
 
-func (g *DefaultGame) StartGame(noOfPlayers int) {
-	g.scheduleAllAlerts(noOfPlayers)
+func (g *DefaultGame) StartGame(noOfPlayers int, w io.Writer) {
+	g.scheduleAllAlerts(noOfPlayers, w)
 }
 
 func (g *DefaultGame) Finish(winner string) error {
@@ -35,11 +36,11 @@ func NewGame(playerStore store.PlayerStore, alerter BlindAlerter) *DefaultGame {
 
 var blindAmounts = []int{100, 200, 300, 400, 500, 600, 800, 1000, 2000, 4000, 8000}
 
-func (g *DefaultGame) scheduleAllAlerts(noOfPlayers int) {
+func (g *DefaultGame) scheduleAllAlerts(noOfPlayers int, w io.Writer) {
 	timeIncrement := time.Duration(5+noOfPlayers) * time.Minute
 	blindTime := 0 * time.Second
 	for _, amount := range blindAmounts {
-		g.alerter.ScheduleAlertAt(blindTime, amount)
+		g.alerter.ScheduleAlertAt(blindTime, amount, w)
 		blindTime = blindTime + timeIncrement
 	}
 }
