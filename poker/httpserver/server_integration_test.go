@@ -26,7 +26,7 @@ func TestIntegrationRoundtrip(t *testing.T) {
 		want := "3"
 		got := res.Body.String()
 
-		assertStatusOk(t, res.Code)
+		assertStatusOk(t, res)
 
 		assertEqual(t, got, want)
 	})
@@ -42,7 +42,7 @@ func TestIntegrationRoundtrip(t *testing.T) {
 
 		res := httptest.NewRecorder()
 		srv.ServeHTTP(res, newLeagueRequest())
-		assertStatusOk(t, res.Code)
+		assertStatusOk(t, res)
 
 		got := getLeagueFromResponse(t, res.Body)
 		want := []business.Player{

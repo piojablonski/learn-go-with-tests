@@ -25,7 +25,7 @@ func TestServer(t *testing.T) {
 	t.Run("return Swiatek scores", func(t *testing.T) {
 		req := getPlayerScores("Swiatek")
 		res := httptest.NewRecorder()
-		assertStatusOk(t, res.Code)
+		assertStatusOk(t, res)
 
 		srv.ServeHTTP(res, req)
 		assertEqual(t, res.Body.String(), "300")
@@ -33,7 +33,7 @@ func TestServer(t *testing.T) {
 	t.Run("return Hurkacz scores", func(t *testing.T) {
 		req := getPlayerScores("Hurkacz")
 		res := httptest.NewRecorder()
-		assertStatusOk(t, res.Code)
+		assertStatusOk(t, res)
 
 		srv.ServeHTTP(res, req)
 		assertEqual(t, res.Body.String(), "234")
@@ -43,7 +43,7 @@ func TestServer(t *testing.T) {
 		req := getPlayerScores("Kubot")
 		res := httptest.NewRecorder()
 		srv.ServeHTTP(res, req)
-		assertStatusOk(t, res.Code)
+		assertStatusOk(t, res)
 
 		assertEqual(t, res.Body.String(), "0")
 		if res.Code != http.StatusOK {
@@ -79,7 +79,7 @@ func TestLeague(t *testing.T) {
 
 		got := getLeagueFromResponse(t, res.Result().Body)
 
-		assertStatusOk(t, res.Code)
+		assertStatusOk(t, res)
 		assertEqual(t, got, wantedPlayers)
 	})
 	t.Run("it return content type json", func(t *testing.T) {
@@ -88,8 +88,20 @@ func TestLeague(t *testing.T) {
 		srv.ServeHTTP(res, req)
 		// assertStatusOk(t, res.Result().StatusCode)
 		assertContentType(t, res)
-
 	})
+
+	t.Run("it returns 200 when hit /game", func(t *testing.T) {
+
+		req, _ := newGameRequest()
+		res := httptest.NewRecorder()
+
+		srv.ServeHTTP(res, req)
+		assertStatusOk(t, res)
+	})
+}
+
+func newGameRequest() (*http.Request, error) {
+	return http.NewRequest(http.MethodGet, "/game", nil)
 }
 
 func assertContentType(t *testing.T, res *httptest.ResponseRecorder) {
@@ -122,7 +134,7 @@ func TestStoreWins(t *testing.T) {
 	res := httptest.NewRecorder()
 	srv.ServeHTTP(res, req)
 
-	assertStatusOk(t, res.Code)
+	assertStatusOk(t, res)
 
 	if len(store.WinCalls) != 1 {
 		t.Fatalf("expected record operation")
@@ -138,10 +150,10 @@ func postPlayerScores(name string) *http.Request {
 	return req
 }
 
-func assertStatusOk(t *testing.T, code int) {
+func assertStatusOk(t *testing.T, response *httptest.ResponseRecorder) {
 	t.Helper()
-	if code != http.StatusOK {
-		t.Fatalf("expected to receive status 200 but received %d", code)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected to receive status 200 but received %d", response.Code)
 	}
 }
 func assertEqual(t *testing.T, got, want any) {

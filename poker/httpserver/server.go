@@ -1,10 +1,12 @@
 package httpserver
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"github.com/piojablonski/learn-go-with-tests/poker/store"
+	"html/template"
 	"net/http"
 	"strings"
 )
@@ -23,6 +25,7 @@ func NewPlayerServer(store store.PlayerStore) *PlayerServer {
 
 	router.HandleFunc("/league", srv.leagueHandler)
 	router.HandleFunc("/player/", srv.playerHandler)
+	router.HandleFunc("/game", gameHandler)
 	srv.store = store
 	return srv
 
@@ -30,7 +33,27 @@ func NewPlayerServer(store store.PlayerStore) *PlayerServer {
 
 const ApplicationJsonContentType = "application/json"
 
-func (ps *PlayerServer) leagueHandler(w http.ResponseWriter, req *http.Request) {
+var (
+	//go:embed "templates/*"
+	postTemplates embed.FS
+)
+
+func gameHandler(w http.ResponseWriter, _ *http.Request) {
+	tmpl, err := template.ParseFS(postTemplates, "templates/*")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("problem loading template %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("problem executing template %s", err.Error()), http.StatusInternalServerError)
+		return
+
+	}
+
+}
+
+func (ps *PlayerServer) leagueHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("content-type", ApplicationJsonContentType)
 	json.NewEncoder(w).Encode(ps.getLeagueTable())
