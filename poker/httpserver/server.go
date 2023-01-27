@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"html/template"
@@ -15,36 +16,51 @@ type PlayerServer struct {
 	store store.PlayerStore
 	// it includes serve http to the struct on the root level
 	http.Handler
+	template *template.Template
 }
 
-func NewPlayerServer(store store.PlayerStore) *PlayerServer {
+func NewPlayerServer(store store.PlayerStore) (*PlayerServer, error) {
 	srv := new(PlayerServer)
 	router := http.NewServeMux()
+	tmpl, err := template.ParseFS(postTemplates, "templates/*")
+	if err != nil {
+		return nil, fmt.Errorf("problem loading template %w", err)
+	}
+	srv.template = tmpl
 	// router and PlayerServer both implements Handle interface so I can assign the router to the server
 	srv.Handler = router
 
 	router.HandleFunc("/league", srv.leagueHandler)
 	router.HandleFunc("/player/", srv.playerHandler)
-	router.HandleFunc("/game", gameHandler)
+	router.HandleFunc("/game", srv.gameHandler)
+	router.HandleFunc("/ws", srv.webSocket)
 	srv.store = store
-	return srv
+	return srv, nil
 
 }
 
 const ApplicationJsonContentType = "application/json"
+
+var wsUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
+
+	conn, _ := wsUpgrader.Upgrade(w, r, nil)
+	_, winnerMsg, _ := conn.ReadMessage()
+	p.store.RecordWin(string(winnerMsg))
+}
 
 var (
 	//go:embed "templates/*"
 	postTemplates embed.FS
 )
 
-func gameHandler(w http.ResponseWriter, _ *http.Request) {
-	tmpl, err := template.ParseFS(postTemplates, "templates/*")
-	if err != nil {
-		http.Error(w, fmt.Sprintf("problem loading template %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, nil)
+func (s *PlayerServer) gameHandler(w http.ResponseWriter, _ *http.Request) {
+
+	err := s.template.Execute(w, nil)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("problem executing template %s", err.Error()), http.StatusInternalServerError)
 		return

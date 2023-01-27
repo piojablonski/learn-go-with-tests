@@ -14,7 +14,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer close()
-	err = http.ListenAndServe(":8080", httpserver.NewPlayerServer(store))
+	srv, err := httpserver.NewPlayerServer(store)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = http.ListenAndServe(":8080", srv)
 	if err != nil {
 		log.Fatal(err)
 	}

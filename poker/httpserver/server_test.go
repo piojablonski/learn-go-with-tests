@@ -2,15 +2,19 @@ package httpserver_test
 
 import (
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/piojablonski/learn-go-with-tests/poker/application"
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
 	"github.com/piojablonski/learn-go-with-tests/poker/httpserver"
+	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 )
 
 var scores = map[string]int{
@@ -19,9 +23,88 @@ var scores = map[string]int{
 	"Kubot":   0,
 }
 
-func TestServer(t *testing.T) {
+func mustMakePlayerServer(t *testing.T, store store.PlayerStore) *httpserver.PlayerServer {
+	t.Helper()
+	srv, err := httpserver.NewPlayerServer(store)
+	if err != nil {
+		t.Fatalf("problem creating player server, %v", err)
+	}
+	return srv
+}
+
+func newGameRequest() (*http.Request, error) {
+	return http.NewRequest(http.MethodGet, "/game", nil)
+}
+
+func assertContentType(t *testing.T, res *httptest.ResponseRecorder) {
+	t.Helper()
+	want := httpserver.ApplicationJsonContentType
+	got := res.Header().Get("content-type")
+
+	assertEqual(t, got, want)
+}
+
+func newLeagueRequest() *http.Request {
+	req, _ := http.NewRequest(http.MethodGet, "/league", nil)
+	return req
+}
+
+func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
+	t.Helper()
+	got, err := application.ReadPlayers(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return got
+}
+
+func TestStoreWins(t *testing.T) {
 	store := &testhelpers.SpyPlayerStore{Scores: scores}
-	srv := httpserver.NewPlayerServer(store)
+	srv := mustMakePlayerServer(t, store)
+
+	req := postPlayerScores("Radwańska")
+	res := httptest.NewRecorder()
+	srv.ServeHTTP(res, req)
+
+	assertStatusOk(t, res)
+
+	if len(store.WinCalls) != 1 {
+		t.Fatalf("expected record operation")
+	}
+}
+
+func getPlayerScores(name string) *http.Request {
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/player/%s", name), nil)
+	return req
+}
+func postPlayerScores(name string) *http.Request {
+	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/player/%s", name), nil)
+	return req
+}
+
+func assertStatusOk(t *testing.T, response *httptest.ResponseRecorder) {
+	t.Helper()
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected to receive status 200 but received %d", response.Code)
+	}
+}
+func assertEqual(t *testing.T, got, want any) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got: %v, want: %v", got, want)
+	}
+}
+
+func mustDial(t *testing.T, url string) *websocket.Conn {
+	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	testhelpers.AssertNoErrorM(t, err, "problem with ws connection at %s, %v", url, err)
+	return wsconn
+
+}
+
+func TestPlayer(t *testing.T) {
+	store := &testhelpers.SpyPlayerStore{Scores: scores}
+	srv := mustMakePlayerServer(t, store)
 	t.Run("return Swiatek scores", func(t *testing.T) {
 		req := getPlayerScores("Swiatek")
 		res := httptest.NewRecorder()
@@ -69,7 +152,7 @@ func TestLeague(t *testing.T) {
 		{Name: "Kubot", Score: 0},
 	}
 	store := &testhelpers.SpyPlayerStore{nil, nil, wantedPlayers}
-	srv := httpserver.NewPlayerServer(store)
+	srv := mustMakePlayerServer(t, store)
 
 	t.Run("it return 200 on /league", func(t *testing.T) {
 
@@ -89,76 +172,37 @@ func TestLeague(t *testing.T) {
 		// assertStatusOk(t, res.Result().StatusCode)
 		assertContentType(t, res)
 	})
+}
 
+func TestGame(t *testing.T) {
 	t.Run("it returns 200 when hit /game", func(t *testing.T) {
-
+		store := &testhelpers.SpyPlayerStore{}
+		srv := mustMakePlayerServer(t, store)
 		req, _ := newGameRequest()
 		res := httptest.NewRecorder()
 
 		srv.ServeHTTP(res, req)
 		assertStatusOk(t, res)
 	})
-}
 
-func newGameRequest() (*http.Request, error) {
-	return http.NewRequest(http.MethodGet, "/game", nil)
-}
+	t.Run("server accepts signal RecordWin on /ws", func(t *testing.T) {
+		store := &testhelpers.SpyPlayerStore{}
+		srv := httptest.NewServer(mustMakePlayerServer(t, store))
+		defer srv.Close()
 
-func assertContentType(t *testing.T, res *httptest.ResponseRecorder) {
-	t.Helper()
-	want := httpserver.ApplicationJsonContentType
-	got := res.Header().Get("content-type")
-
-	assertEqual(t, got, want)
-}
-
-func newLeagueRequest() *http.Request {
-	req, _ := http.NewRequest(http.MethodGet, "/league", nil)
-	return req
-}
-
-func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
-	t.Helper()
-	got, err := application.ReadPlayers(body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return got
-}
-
-func TestStoreWins(t *testing.T) {
-	store := &testhelpers.SpyPlayerStore{Scores: scores}
-	srv := httpserver.NewPlayerServer(store)
-
-	req := postPlayerScores("Radwańska")
-	res := httptest.NewRecorder()
-	srv.ServeHTTP(res, req)
-
-	assertStatusOk(t, res)
-
-	if len(store.WinCalls) != 1 {
-		t.Fatalf("expected record operation")
-	}
-}
-
-func getPlayerScores(name string) *http.Request {
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/player/%s", name), nil)
-	return req
-}
-func postPlayerScores(name string) *http.Request {
-	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("/player/%s", name), nil)
-	return req
-}
-
-func assertStatusOk(t *testing.T, response *httptest.ResponseRecorder) {
-	t.Helper()
-	if response.Code != http.StatusOK {
-		t.Fatalf("expected to receive status 200 but received %d", response.Code)
-	}
-}
-func assertEqual(t *testing.T, got, want any) {
-	t.Helper()
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got: %v, want: %v", got, want)
-	}
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws"
+		wsconn := mustDial(t, wsURL)
+		defer wsconn.Close()
+		winner := "Swiatek"
+		if err := wsconn.WriteMessage(websocket.TextMessage, []byte(winner)); err != nil {
+			t.Fatalf("cannot send a message through websocket, %v", err)
+		}
+		time.Sleep(1 * time.Second)
+		if len(store.WinCalls) != 1 {
+			t.Fatalf("expected to have a winner but got none")
+		}
+		if got := store.WinCalls[0]; got != winner {
+			t.Fatalf("expected winner to be %s but got %s", winner, got)
+		}
+	})
 }

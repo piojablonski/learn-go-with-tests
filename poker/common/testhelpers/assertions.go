@@ -25,3 +25,9 @@ func AssertNoError(t *testing.T, err error) {
 		t.Fatalf("didn't expect an error but got one, %v", err)
 	}
 }
+func AssertNoErrorM(t *testing.T, err error, format string, args ...any) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf(format, args...)
+	}
+}
