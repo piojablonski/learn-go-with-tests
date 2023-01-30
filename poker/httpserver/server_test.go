@@ -59,9 +59,9 @@ func getLeagueFromResponse(t *testing.T, body io.Reader) []business.Player {
 }
 
 func TestStoreWins(t *testing.T) {
-	store := &testhelpers.SpyPlayerStore{Scores: scores}
+	playersStore := &testhelpers.SpyPlayerStore{Scores: scores}
 	game := new(application.SpyGame)
-	srv := mustMakePlayerServer(t, store, game)
+	srv := mustMakePlayerServer(t, playersStore, game)
 
 	req := postPlayerScores("Radwańska")
 	res := httptest.NewRecorder()
@@ -69,7 +69,7 @@ func TestStoreWins(t *testing.T) {
 
 	assertStatusOk(t, res)
 
-	if len(store.WinCalls) != 1 {
+	if len(playersStore.WinCalls) != 1 {
 		t.Fatalf("expected record operation")
 	}
 }
@@ -111,9 +111,9 @@ func writeWS(t *testing.T, wsconn *websocket.Conn, winner string) {
 }
 
 func TestPlayer(t *testing.T) {
-	store := &testhelpers.SpyPlayerStore{Scores: scores}
+	playersStore := &testhelpers.SpyPlayerStore{Scores: scores}
 	game := new(application.SpyGame)
-	srv := mustMakePlayerServer(t, store, game)
+	srv := mustMakePlayerServer(t, playersStore, game)
 	t.Run("return Swiatek scores", func(t *testing.T) {
 		req := getPlayerScores("Swiatek")
 		res := httptest.NewRecorder()
@@ -160,9 +160,9 @@ func TestLeague(t *testing.T) {
 		{Name: "Hurkacz", Score: 234},
 		{Name: "Kubot", Score: 0},
 	}
-	store := &testhelpers.SpyPlayerStore{nil, nil, wantedPlayers}
+	playersStore := &testhelpers.SpyPlayerStore{nil, nil, wantedPlayers}
 	game := new(application.SpyGame)
-	srv := mustMakePlayerServer(t, store, game)
+	srv := mustMakePlayerServer(t, playersStore, game)
 
 	t.Run("it return 200 on /league", func(t *testing.T) {
 
@@ -186,9 +186,9 @@ func TestLeague(t *testing.T) {
 
 func TestGame(t *testing.T) {
 	t.Run("it returns 200 when hit /game", func(t *testing.T) {
-		store := &testhelpers.SpyPlayerStore{}
+		playersStore := &testhelpers.SpyPlayerStore{}
 		game := new(application.SpyGame)
-		srv := mustMakePlayerServer(t, store, game)
+		srv := mustMakePlayerServer(t, playersStore, game)
 		req, _ := newGameRequest()
 		res := httptest.NewRecorder()
 
@@ -209,8 +209,41 @@ func TestGame(t *testing.T) {
 		writeWS(t, wsconn, "3")
 		writeWS(t, wsconn, "Swiatek")
 
-		time.Sleep(1 * time.Second)
 		application.AssertGameStartedWithPlayers(t, game, 3)
 		application.AssertFinishCalledWith(t, game, "Swiatek")
+
+		within(t, 1*time.Second, func() { assertWebsocketGotMedssage(t, wsconn, "game started") })
+
 	})
+}
+
+func assertWebsocketGotMedssage(t *testing.T, wsconn *websocket.Conn, want string) {
+	_, got, _ := wsconn.ReadMessage()
+
+	fmt.Println("assert function")
+	if string(got) != want {
+		t.Errorf("wanted to receive: %s, got %s", want, got)
+	}
+}
+
+func within(t *testing.T, duration time.Duration, assert func()) {
+	fmt.Println("within")
+	t.Helper()
+
+	timeout := time.After(duration)
+	done := make(chan interface{}, 1)
+
+	go func() {
+		assert()
+		done <- 1
+	}()
+
+	select {
+	case <-timeout:
+		fmt.Println("case timeout")
+		t.Errorf("test has timeout")
+	case <-done:
+		fmt.Println("case done")
+	}
+
 }

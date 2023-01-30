@@ -8,7 +8,6 @@ import (
 	"github.com/piojablonski/learn-go-with-tests/poker/business"
 	"github.com/piojablonski/learn-go-with-tests/poker/store"
 	"html/template"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,7 +50,7 @@ func (p *PlayerServer) webSocket(w http.ResponseWriter, r *http.Request) {
 
 	noOfPLayersMsg := ws.waitForMessage()
 	noOfPlayers, _ := strconv.Atoi(noOfPLayersMsg)
-	p.game.StartGame(noOfPlayers, io.Discard)
+	p.game.StartGame(noOfPlayers, &ws)
 	winnerMsg := ws.waitForMessage()
 	p.game.Finish(winnerMsg)
 }

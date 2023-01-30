@@ -33,3 +33,11 @@ func (s *playerServerWS) waitForMessage() string {
 	}
 	return string(msg)
 }
+
+func (s *playerServerWS) Write(b []byte) (int, error) {
+	err := s.conn.WriteMessage(websocket.TextMessage, b)
+	if err != nil {
+		return 0, err
+	}
+	return len(b), nil
+}

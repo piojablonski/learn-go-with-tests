@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"github.com/piojablonski/learn-go-with-tests/poker/common/testhelpers"
 	"io"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 type SpyGame struct {
@@ -13,8 +15,10 @@ type SpyGame struct {
 	CallsToFinishGame []string
 }
 
-func (s *SpyGame) StartGame(noOfPlayers int, _ io.Writer) {
+func (s *SpyGame) StartGame(noOfPlayers int, w io.Writer) {
 	s.CallsToStartGame = append(s.CallsToStartGame, noOfPlayers)
+	w.Write([]byte("game started"))
+
 }
 
 func (s *SpyGame) Finish(winner string) error {
@@ -29,15 +33,32 @@ func AssertGameNotStarted(t *testing.T, game *SpyGame) {
 }
 
 func AssertGameStartedWithPlayers(t *testing.T, game *SpyGame, noOfPlayers int) {
-	got2 := game.CallsToStartGame
+	got2 := &game.CallsToStartGame
 	want2 := []int{noOfPlayers}
-	testhelpers.AssertEqual(t, got2, want2)
+	retryUntil(t, 1*time.Second, func() bool {
+		return reflect.DeepEqual(*got2, want2)
+	})
+	testhelpers.AssertEqual(t, *got2, want2)
 }
+func retryUntil(t *testing.T, duration time.Duration, assert func() bool) bool {
+	t.Helper()
+	end := time.Now().Add(duration)
 
+	for time.Now().Before(end) {
+		if res := assert(); res == true {
+			return true
+		}
+	}
+
+	return false
+}
 func AssertFinishCalledWith(t *testing.T, game *SpyGame, name string) {
 	want := []string{name}
-	got := game.CallsToFinishGame
-	testhelpers.AssertEqual(t, got, want)
+	got := &game.CallsToFinishGame
+	retryUntil(t, 1*time.Second, func() bool {
+		return reflect.DeepEqual(*got, want)
+	})
+	testhelpers.AssertEqual(t, *got, want)
 }
 
 func AssertGameNotFinished(t *testing.T, game *SpyGame) {
